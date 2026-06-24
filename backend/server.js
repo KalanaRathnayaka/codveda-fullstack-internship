@@ -1,6 +1,9 @@
 const express = require("express");
 const cors = require("cors");
+const mongoose = require("mongoose");
 require("dotenv").config();
+
+const Product = require("./models/Product");
 
 const app = express();
 
@@ -8,126 +11,155 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Temporary data storage
-let products = [
-  {
-    id: 1,
-    name: "Laptop",
-    price: 250000,
-    category: "Electronics"
-  },
-  {
-    id: 2,
-    name: "Mobile Phone",
-    price: 120000,
-    category: "Electronics"
-  }
-];
+// MongoDB Atlas connection
+mongoose
+  .connect(process.env.MONGO_URI)
+  .then(() => {
+    console.log("MongoDB Atlas connected successfully");
+  })
+  .catch((error) => {
+    console.error("MongoDB connection failed:", error.message);
+  });
 
 // Home route
 app.get("/", (req, res) => {
   res.status(200).json({
-    message: "Codveda Level 1 Task 2 REST API is running"
+    message: "Codveda REST API with MongoDB is running"
   });
 });
 
 // Get all products
-app.get("/api/products", (req, res) => {
-  res.status(200).json({
-    success: true,
-    count: products.length,
-    data: products
-  });
-});
+app.get("/api/products", async (req, res) => {
+  try {
+    const products = await Product.find().sort({ createdAt: -1 });
 
-// Get single product
-app.get("/api/products/:id", (req, res) => {
-  const id = parseInt(req.params.id);
-  const product = products.find((item) => item.id === id);
-
-  if (!product) {
-    return res.status(404).json({
+    res.status(200).json({
+      success: true,
+      count: products.length,
+      data: products
+    });
+  } catch (error) {
+    res.status(500).json({
       success: false,
-      message: "Product not found"
+      message: "Failed to fetch products",
+      error: error.message
     });
   }
+});
 
-  res.status(200).json({
-    success: true,
-    data: product
-  });
+// Get single product by ID
+app.get("/api/products/:id", async (req, res) => {
+  try {
+    const product = await Product.findById(req.params.id);
+
+    if (!product) {
+      return res.status(404).json({
+        success: false,
+        message: "Product not found"
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      data: product
+    });
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      message: "Invalid product ID",
+      error: error.message
+    });
+  }
 });
 
 // Create product
-app.post("/api/products", (req, res) => {
-  const { name, price, category } = req.body;
+app.post("/api/products", async (req, res) => {
+  try {
+    const { name, price, category } = req.body;
 
-  if (!name || !price || !category) {
-    return res.status(400).json({
+    if (!name || !price || !category) {
+      return res.status(400).json({
+        success: false,
+        message: "Name, price, and category are required"
+      });
+    }
+
+    const newProduct = await Product.create({
+      name,
+      price,
+      category
+    });
+
+    res.status(201).json({
+      success: true,
+      message: "Product created successfully",
+      data: newProduct
+    });
+  } catch (error) {
+    res.status(500).json({
       success: false,
-      message: "Name, price, and category are required"
+      message: "Failed to create product",
+      error: error.message
     });
   }
-
-  const newProduct = {
-    id: products.length + 1,
-    name,
-    price,
-    category
-  };
-
-  products.push(newProduct);
-
-  res.status(201).json({
-    success: true,
-    message: "Product created successfully",
-    data: newProduct
-  });
 });
 
 // Update product
-app.put("/api/products/:id", (req, res) => {
-  const id = parseInt(req.params.id);
-  const product = products.find((item) => item.id === id);
+app.put("/api/products/:id", async (req, res) => {
+  try {
+    const updatedProduct = await Product.findByIdAndUpdate(
+      req.params.id,
+      req.body,
+      {
+        new: true,
+        runValidators: true
+      }
+    );
 
-  if (!product) {
-    return res.status(404).json({
+    if (!updatedProduct) {
+      return res.status(404).json({
+        success: false,
+        message: "Product not found"
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Product updated successfully",
+      data: updatedProduct
+    });
+  } catch (error) {
+    res.status(400).json({
       success: false,
-      message: "Product not found"
+      message: "Failed to update product",
+      error: error.message
     });
   }
-
-  const { name, price, category } = req.body;
-
-  product.name = name || product.name;
-  product.price = price || product.price;
-  product.category = category || product.category;
-
-  res.status(200).json({
-    success: true,
-    message: "Product updated successfully",
-    data: product
-  });
 });
 
 // Delete product
-app.delete("/api/products/:id", (req, res) => {
-  const id = parseInt(req.params.id);
-  const product = products.find((item) => item.id === id);
+app.delete("/api/products/:id", async (req, res) => {
+  try {
+    const deletedProduct = await Product.findByIdAndDelete(req.params.id);
 
-  if (!product) {
-    return res.status(404).json({
+    if (!deletedProduct) {
+      return res.status(404).json({
+        success: false,
+        message: "Product not found"
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Product deleted successfully"
+    });
+  } catch (error) {
+    res.status(400).json({
       success: false,
-      message: "Product not found"
+      message: "Failed to delete product",
+      error: error.message
     });
   }
-
-  products = products.filter((item) => item.id !== id);
-
-  res.status(200).json({
-    success: true,
-    message: "Product deleted successfully"
-  });
 });
 
 // Server

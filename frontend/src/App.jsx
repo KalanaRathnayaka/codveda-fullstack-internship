@@ -34,7 +34,7 @@ function App() {
   const handleSubmit = async (productData) => {
     try {
       if (selectedProduct) {
-        await updateProduct(selectedProduct.id, productData);
+        await updateProduct(selectedProduct._id, productData);
         alert("Product updated successfully");
       } else {
         await createProduct(productData);
@@ -86,23 +86,23 @@ function App() {
             </div>
           </div>
 
-          <div className="nav-badge">Level 2 Task 1</div>
+          <div className="nav-badge">Level 2 Task 3</div>
         </nav>
 
         <div className="hero-content">
           <div>
-            <span className="tag">React + REST API</span>
+            <span className="tag">React + Express + MongoDB</span>
             <h1>Product Management System</h1>
             <p>
-              A clean full-stack frontend connected with a Node.js Express REST
-              API for product create, read, update and delete operations.
+              A professional full-stack product management system connected with
+              MongoDB Atlas for create, read, update and delete operations.
             </p>
           </div>
 
           <div className="hero-card">
             <h3>Total Products</h3>
             <h1>{products.length}</h1>
-            <p>Live data from backend API</p>
+            <p>Live data from MongoDB Atlas</p>
           </div>
         </div>
       </header>
@@ -120,8 +120,8 @@ function App() {
           </div>
 
           <div className="stat-card">
-            <h3>Operations</h3>
-            <p>CRUD Functions</p>
+            <h3>Database</h3>
+            <p>MongoDB Atlas</p>
           </div>
         </section>
 
@@ -151,7 +151,7 @@ function App() {
               <div className="product-grid">
                 {products.map((product) => (
                   <ProductCard
-                    key={product.id}
+                    key={product._id}
                     product={product}
                     onEdit={handleEdit}
                     onDelete={handleDelete}

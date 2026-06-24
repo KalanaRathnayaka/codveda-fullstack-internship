@@ -7,7 +7,7 @@ function ProductCard({ product, onEdit, onDelete }) {
 
       <div className="card-buttons">
         <button onClick={() => onEdit(product)}>Edit</button>
-        <button className="delete-btn" onClick={() => onDelete(product.id)}>
+        <button className="delete-btn" onClick={() => onDelete(product._id)}>
           Delete
         </button>
       </div>
