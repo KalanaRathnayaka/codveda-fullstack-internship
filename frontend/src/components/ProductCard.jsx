@@ -1,0 +1,18 @@
+function ProductCard({ product, onEdit, onDelete }) {
+  return (
+    <div className="product-card">
+      <h3>{product.name}</h3>
+      <p>Price: Rs. {product.price}</p>
+      <p>Category: {product.category}</p>
+
+      <div className="card-buttons">
+        <button onClick={() => onEdit(product)}>Edit</button>
+        <button className="delete-btn" onClick={() => onDelete(product.id)}>
+          Delete
+        </button>
+      </div>
+    </div>
+  );
+}
+
+export default ProductCard;
