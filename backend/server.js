@@ -7,9 +7,13 @@ const Product = require("./models/Product");
 
 const app = express();
 
+const authRoutes = require("./routes/authRoutes");
+const { protect, adminOnly } = require("./middleware/authMiddleware");
+
 // Middleware
 app.use(cors());
 app.use(express.json());
+app.use("/api/auth", authRoutes);
 
 // MongoDB Atlas connection
 mongoose
@@ -73,7 +77,7 @@ app.get("/api/products/:id", async (req, res) => {
 });
 
 // Create product
-app.post("/api/products", async (req, res) => {
+app.post("/api/products", protect, adminOnly, async (req, res) => {
   try {
     const { name, price, category } = req.body;
 
@@ -105,7 +109,7 @@ app.post("/api/products", async (req, res) => {
 });
 
 // Update product
-app.put("/api/products/:id", async (req, res) => {
+app.put("/api/products/:id", protect, adminOnly, async (req, res) => {
   try {
     const updatedProduct = await Product.findByIdAndUpdate(
       req.params.id,
@@ -138,7 +142,7 @@ app.put("/api/products/:id", async (req, res) => {
 });
 
 // Delete product
-app.delete("/api/products/:id", async (req, res) => {
+app.delete("/api/products/:id", protect, adminOnly, async (req, res) => {
   try {
     const deletedProduct = await Product.findByIdAndDelete(req.params.id);
 

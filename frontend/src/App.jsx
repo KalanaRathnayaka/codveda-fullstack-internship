@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import "./App.css";
 import ProductCard from "./components/ProductCard";
 import ProductForm from "./components/ProductForm";
+import LoginPage from "./components/LoginPage";
 import {
   getProducts,
   createProduct,
@@ -13,6 +14,20 @@ function App() {
   const [products, setProducts] = useState([]);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [user, setUser] = useState(null);
+  const [page, setPage] = useState("home");
+
+  const isAdmin = user?.role === "admin";
+
+  useEffect(() => {
+    const savedUser = localStorage.getItem("codvedaUser");
+
+    if (savedUser) {
+      setUser(JSON.parse(savedUser));
+    }
+
+    fetchProducts();
+  }, []);
 
   const fetchProducts = async () => {
     try {
@@ -27,11 +42,12 @@ function App() {
     }
   };
 
-  useEffect(() => {
-    fetchProducts();
-  }, []);
-
   const handleSubmit = async (productData) => {
+    if (!isAdmin) {
+      alert("Only admin users can add or update products");
+      return;
+    }
+
     try {
       if (selectedProduct) {
         await updateProduct(selectedProduct._id, productData);
@@ -44,7 +60,7 @@ function App() {
       setSelectedProduct(null);
       fetchProducts();
     } catch (error) {
-      alert("Operation failed");
+      alert(error.response?.data?.message || "Operation failed");
       console.error(error);
     }
   };
@@ -54,6 +70,11 @@ function App() {
   };
 
   const handleDelete = async (id) => {
+    if (!isAdmin) {
+      alert("Only admin users can delete products");
+      return;
+    }
+
     const confirmDelete = window.confirm(
       "Are you sure you want to delete this product?"
     );
@@ -65,7 +86,7 @@ function App() {
       alert("Product deleted successfully");
       fetchProducts();
     } catch (error) {
-      alert("Delete failed");
+      alert(error.response?.data?.message || "Delete failed");
       console.error(error);
     }
   };
@@ -73,6 +94,17 @@ function App() {
   const handleCancel = () => {
     setSelectedProduct(null);
   };
+
+  const handleLogout = () => {
+    localStorage.removeItem("codvedaUser");
+    setUser(null);
+    setSelectedProduct(null);
+    alert("Logged out successfully");
+  };
+
+  if (page === "login") {
+    return <LoginPage setUser={setUser} onBack={() => setPage("home")} />;
+  }
 
   return (
     <div className="app">
@@ -86,17 +118,36 @@ function App() {
             </div>
           </div>
 
-          <div className="nav-badge">Level 2 Task 3</div>
+          <div className="nav-actions">
+            <div className="nav-badge">Level 3 Task 1</div>
+
+            {user ? (
+              <button className="logout-nav-btn" onClick={handleLogout}>
+                Logout
+              </button>
+            ) : (
+              <button className="login-nav-btn" onClick={() => setPage("login")}>
+                Admin Login
+              </button>
+            )}
+          </div>
         </nav>
 
         <div className="hero-content">
           <div>
-            <span className="tag">React + Express + MongoDB</span>
+            <span className="tag">React + Express + MongoDB + JWT</span>
             <h1>Product Management System</h1>
             <p>
-              A professional full-stack product management system connected with
-              MongoDB Atlas for create, read, update and delete operations.
+              A full-stack product management system with MongoDB database,
+              JWT authentication, and admin role-based access control.
             </p>
+
+            {user && (
+              <div className="logged-user-box">
+                Welcome, <strong>{user.name}</strong> | Role:{" "}
+                <strong>{user.role}</strong>
+              </div>
+            )}
           </div>
 
           <div className="hero-card">
@@ -120,25 +171,31 @@ function App() {
           </div>
 
           <div className="stat-card">
-            <h3>Database</h3>
-            <p>MongoDB Atlas</p>
+            <h3>Security</h3>
+            <p>JWT + Role Access</p>
           </div>
         </section>
 
         <section className="content-grid">
-          <div className="panel form-panel">
-            <ProductForm
-              onSubmit={handleSubmit}
-              selectedProduct={selectedProduct}
-              onCancel={handleCancel}
-            />
-          </div>
+          {isAdmin && (
+            <div className="panel form-panel">
+              <ProductForm
+                onSubmit={handleSubmit}
+                selectedProduct={selectedProduct}
+                onCancel={handleCancel}
+              />
+            </div>
+          )}
 
-          <div className="panel products-panel">
+          <div className={`panel products-panel ${!isAdmin ? "full-panel" : ""}`}>
             <div className="section-title">
               <div>
                 <h2>Product List</h2>
-                <p>Manage all available products here</p>
+                <p>
+                  {isAdmin
+                    ? "Manage all available products here"
+                    : "Login as admin to manage products"}
+                </p>
               </div>
               <span>{products.length} items</span>
             </div>
@@ -155,6 +212,7 @@ function App() {
                     product={product}
                     onEdit={handleEdit}
                     onDelete={handleDelete}
+                    isAdmin={isAdmin}
                   />
                 ))}
               </div>

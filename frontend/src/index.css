@@ -15,10 +15,9 @@ body {
   min-width: 320px;
   min-height: 100vh;
   font-family: Inter, Arial, Helvetica, sans-serif;
-  background: #f4f7fb;
+  background: #f8fafc;
   color: #111827;
   overflow-x: hidden;
-  display: block;
 }
 
 #root {
@@ -29,6 +28,7 @@ body {
 }
 
 button,
-input {
+input,
+select {
   font-family: inherit;
 }
