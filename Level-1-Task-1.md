@@ -15,10 +15,3 @@
 
 ## GitHub Repository
 Repository Link: https://github.com/KalanaRathnayaka/codveda-fullstack-internship
-
-## Screenshots
-Added screenshots of:
-1. Node.js version
-2. npm version
-3. Git version
-4. GitHub repository

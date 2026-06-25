@@ -50,14 +50,6 @@ The frontend contains:
 - Product list section
 - Edit and delete actions
 
-## Screenshots
-Screenshots were taken for:
-1. React frontend running
-2. Product list displayed from API
-3. Add product form
-4. Edit product function
-5. Delete product function
-6. Professional dashboard UI
 
 ## GitHub Repository
 Repository Link: https://github.com/KalanaRathnayaka/codveda-fullstack-internship

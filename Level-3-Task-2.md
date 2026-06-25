@@ -60,14 +60,6 @@ The React frontend listens to Socket.io events and updates the UI in real time.
 Admin users see the Admin Live Notifications panel.  
 Public users see notifications through the bell icon.
 
-## Screenshots
-Screenshots were taken for:
-1. Socket.io server running
-2. Admin live notification
-3. Public bell notification
-4. Notification count badge
-5. Clear one notification
-6. Clear all notifications
 
 ## GitHub Repository
 Repository Link: https://github.com/KalanaRathnayaka/codveda-fullstack-internship

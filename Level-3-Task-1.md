@@ -69,16 +69,6 @@ Collections:
 - users
 - products
 
-## Screenshots
-Screenshots were taken for:
-1. Admin registration
-2. Admin login success
-3. Protected profile route
-4. Product create with admin token
-5. Product create failed without token
-6. React admin login page
-7. Admin dashboard
-8. MongoDB Atlas product collection
 
 ## GitHub Repository
 Repository Link: https://github.com/KalanaRathnayaka/codveda-fullstack-internship

@@ -89,15 +89,6 @@ Response:
   "message": "Product not found"
 }
 
-## Screenshots
-Screenshots were taken for:
-1. Server running
-2. GET all products
-3. GET single product
-4. POST create product
-5. PUT update product
-6. DELETE product
-7. Error handling response
 
 ## GitHub Repository
 Repository Link: https://github.com/KalanaRathnayaka/codveda-fullstack-internship

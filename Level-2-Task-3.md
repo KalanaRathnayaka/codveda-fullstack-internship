@@ -73,13 +73,6 @@ http://localhost:5000/api/products/:id
 ## MongoDB Atlas Output
 The product data was successfully saved in MongoDB Atlas under the products collection.
 
-## Screenshots
-Screenshots were taken for:
-1. MongoDB Atlas connection success in terminal
-2. Product added from React frontend
-3. Product saved in MongoDB Atlas
-4. Product update function
-5. Product delete function
 
 ## GitHub Repository
 Repository Link: https://github.com/KalanaRathnayaka/codveda-fullstack-internship
