@@ -3,6 +3,7 @@ import "./App.css";
 import ProductCard from "./components/ProductCard";
 import ProductForm from "./components/ProductForm";
 import LoginPage from "./components/LoginPage";
+import { io } from "socket.io-client";
 import {
   getProducts,
   createProduct,
@@ -17,17 +18,75 @@ function App() {
   const [user, setUser] = useState(null);
   const [page, setPage] = useState("home");
 
+  const [notifications, setNotifications] = useState([]);
+  const [publicNotifications, setPublicNotifications] = useState([]);
+  const [showBellDropdown, setShowBellDropdown] = useState(false);
+
   const isAdmin = user?.role === "admin";
 
   useEffect(() => {
     const savedUser = localStorage.getItem("codvedaUser");
+    const savedPublicNotifications = localStorage.getItem(
+      "codvedaPublicNotifications"
+    );
 
     if (savedUser) {
       setUser(JSON.parse(savedUser));
     }
 
+    if (savedPublicNotifications) {
+      setPublicNotifications(JSON.parse(savedPublicNotifications));
+    }
+
     fetchProducts();
   }, []);
+
+  useEffect(() => {
+    localStorage.setItem(
+      "codvedaPublicNotifications",
+      JSON.stringify(publicNotifications)
+    );
+  }, [publicNotifications]);
+
+  useEffect(() => {
+    const socket = io("http://localhost:5000");
+
+    socket.on("connect", () => {
+      console.log("Connected to Socket.io server");
+
+      if (user?.role === "admin") {
+        socket.emit("joinRole", "admin");
+      } else {
+        socket.emit("joinRole", "user");
+      }
+    });
+
+    // Admin dashboard notifications
+    socket.on("productNotification", (data) => {
+      if (user?.role === "admin") {
+        setNotifications((prev) => [data, ...prev.slice(0, 4)]);
+      }
+    });
+
+    // Public/home bell notifications - only new product add
+    socket.on("newProductNotification", (data) => {
+      const newNotification = {
+        ...data,
+        id: `${Date.now()}-${Math.random()}`,
+        time: new Date().toLocaleTimeString()
+      };
+
+      setPublicNotifications((prev) => [newNotification, ...prev]);
+    });
+
+    socket.on("productsChanged", () => {
+      fetchProducts();
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, [user]);
 
   const fetchProducts = async () => {
     try {
@@ -99,7 +158,29 @@ function App() {
     localStorage.removeItem("codvedaUser");
     setUser(null);
     setSelectedProduct(null);
+    setNotifications([]);
     alert("Logged out successfully");
+  };
+
+  const clearOnePublicNotification = (notificationId) => {
+    setPublicNotifications((prev) =>
+      prev.filter((item) => item.id !== notificationId)
+    );
+  };
+
+  const clearAllPublicNotifications = () => {
+    setPublicNotifications([]);
+    setShowBellDropdown(false);
+  };
+
+  const clearOneAdminNotification = (indexToRemove) => {
+    setNotifications((prev) =>
+      prev.filter((_, index) => index !== indexToRemove)
+    );
+  };
+
+  const clearAllAdminNotifications = () => {
+    setNotifications([]);
   };
 
   if (page === "login") {
@@ -119,14 +200,81 @@ function App() {
           </div>
 
           <div className="nav-actions">
-            <div className="nav-badge">Level 3 Task 1</div>
+            <div className="nav-badge">Level 3 Task 2</div>
+
+            {!isAdmin && (
+              <div className="bell-wrapper">
+                <button
+                  className="bell-btn"
+                  onClick={() => setShowBellDropdown(!showBellDropdown)}
+                  title="Notifications"
+                >
+                  🔔
+                  {publicNotifications.length > 0 && (
+                    <span className="bell-count">
+                      {publicNotifications.length}
+                    </span>
+                  )}
+                </button>
+
+                {showBellDropdown && (
+                  <div className="bell-dropdown">
+                    <div className="bell-header">
+                      <div>
+                        <h3>Notifications</h3>
+                        <p>New store updates</p>
+                      </div>
+
+                      {publicNotifications.length > 0 && (
+                        <button
+                          className="clear-all-btn"
+                          onClick={clearAllPublicNotifications}
+                        >
+                          Clear All
+                        </button>
+                      )}
+                    </div>
+
+                    {publicNotifications.length === 0 ? (
+                      <div className="empty-notification">
+                        No new notifications
+                      </div>
+                    ) : (
+                      <div className="bell-list">
+                        {publicNotifications.map((item) => (
+                          <div className="bell-item" key={item.id}>
+                            <div>
+                              <strong>{item.message}</strong>
+                              <small>{item.time}</small>
+                            </div>
+
+                            <button
+                              className="clear-one-btn"
+                              onClick={() =>
+                                clearOnePublicNotification(item.id)
+                              }
+                              title="Clear notification"
+                            >
+                              ×
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
 
             {user ? (
               <button className="logout-nav-btn" onClick={handleLogout}>
                 Logout
               </button>
             ) : (
-              <button className="login-nav-btn" onClick={() => setPage("login")}>
+              <button
+                className="login-nav-btn"
+                onClick={() => setPage("login")}
+              >
                 Admin Login
               </button>
             )}
@@ -138,8 +286,9 @@ function App() {
             <span className="tag">React + Express + MongoDB + JWT</span>
             <h1>Product Management System</h1>
             <p>
-              A full-stack product management system with MongoDB database,
-              JWT authentication, and admin role-based access control.
+              A full-stack product management system with MongoDB database, JWT
+              authentication, admin role-based access control, and real-time
+              product notifications.
             </p>
 
             {user && (
@@ -171,10 +320,42 @@ function App() {
           </div>
 
           <div className="stat-card">
-            <h3>Security</h3>
-            <p>JWT + Role Access</p>
+            <h3>Real-Time</h3>
+            <p>Socket.io Notifications</p>
           </div>
         </section>
+
+        {isAdmin && notifications.length > 0 && (
+          <section className="notification-panel">
+            <div className="notification-title">
+              <div>
+                <h2>Admin Live Notifications</h2>
+                <p>Real-time product updates using Socket.io</p>
+              </div>
+
+              <button
+                className="admin-clear-all-btn"
+                onClick={clearAllAdminNotifications}
+              >
+                Clear All
+              </button>
+            </div>
+
+            <div className="notification-list">
+              {notifications.map((item, index) => (
+                <div className={`notification-item ${item.type}`} key={index}>
+                  <strong>{item.message}</strong>
+                  <button
+                    className="notification-clear-btn"
+                    onClick={() => clearOneAdminNotification(index)}
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
 
         <section className="content-grid">
           {isAdmin && (

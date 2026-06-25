@@ -3,12 +3,22 @@ const cors = require("cors");
 const mongoose = require("mongoose");
 require("dotenv").config();
 
+const http = require("http");
+const { Server } = require("socket.io");
+
 const Product = require("./models/Product");
-
-const app = express();
-
 const authRoutes = require("./routes/authRoutes");
 const { protect, adminOnly } = require("./middleware/authMiddleware");
+
+const app = express();
+const server = http.createServer(app);
+
+const io = new Server(server, {
+  cors: {
+    origin: "http://localhost:5173",
+    methods: ["GET", "POST", "PUT", "DELETE"]
+  }
+});
 
 // Middleware
 app.use(cors());
@@ -25,10 +35,29 @@ mongoose
     console.error("MongoDB connection failed:", error.message);
   });
 
+// Socket.io connection
+io.on("connection", (socket) => {
+  console.log("User connected:", socket.id);
+
+  socket.on("joinRole", (role) => {
+    if (role === "admin") {
+      socket.join("admin-room");
+      console.log("Admin joined admin-room:", socket.id);
+    } else {
+      socket.join("user-room");
+      console.log("Public user joined user-room:", socket.id);
+    }
+  });
+
+  socket.on("disconnect", () => {
+    console.log("User disconnected:", socket.id);
+  });
+});
+
 // Home route
 app.get("/", (req, res) => {
   res.status(200).json({
-    message: "Codveda REST API with MongoDB is running"
+    message: "Codveda REST API with MongoDB and Socket.io is running"
   });
 });
 
@@ -94,6 +123,23 @@ app.post("/api/products", protect, adminOnly, async (req, res) => {
       category
     });
 
+    // Admin dashboard notification
+    io.to("admin-room").emit("productNotification", {
+      type: "created",
+      message: `New product added: ${newProduct.name}`,
+      product: newProduct
+    });
+
+    // Public/home user bell notification
+    io.emit("newProductNotification", {
+      type: "created",
+      message: `New product added to store: ${newProduct.name}`,
+      product: newProduct
+    });
+
+    // Refresh product list for everyone
+    io.emit("productsChanged");
+
     res.status(201).json({
       success: true,
       message: "Product created successfully",
@@ -127,6 +173,16 @@ app.put("/api/products/:id", protect, adminOnly, async (req, res) => {
       });
     }
 
+    // Admin only notification
+    io.to("admin-room").emit("productNotification", {
+      type: "updated",
+      message: `Product updated: ${updatedProduct.name}`,
+      product: updatedProduct
+    });
+
+    // Refresh product list for everyone
+    io.emit("productsChanged");
+
     res.status(200).json({
       success: true,
       message: "Product updated successfully",
@@ -153,6 +209,16 @@ app.delete("/api/products/:id", protect, adminOnly, async (req, res) => {
       });
     }
 
+    // Admin only notification
+    io.to("admin-room").emit("productNotification", {
+      type: "deleted",
+      message: `Product deleted: ${deletedProduct.name}`,
+      product: deletedProduct
+    });
+
+    // Refresh product list for everyone
+    io.emit("productsChanged");
+
     res.status(200).json({
       success: true,
       message: "Product deleted successfully"
@@ -169,6 +235,6 @@ app.delete("/api/products/:id", protect, adminOnly, async (req, res) => {
 // Server
 const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, () => {
+server.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
